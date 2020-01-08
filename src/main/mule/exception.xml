@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="exceptionFlow" doc:id="b8057dd2-2e7a-48c9-9f03-faf6a4e1c7e9" >
+		<http:listener doc:name="Listener" doc:id="79a6e0a1-8bca-47a9-8aa5-8dfc5fa66cf5" config-ref="HTTP_Listener_config" path="/except" allowedMethods="GET">
+			<http:error-response >
+				<http:body ><![CDATA[#[output application/json --- error.description]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<set-payload value="#[%%%%%%%]" doc:name="Set Payload" doc:id="ef6eee7c-bc93-4340-9920-cea6371273ae" mimeType="application/json"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a78d523f-e805-458a-8210-9f364dcb54f0" message="#[payload]"/>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="beb81bf3-e45a-4fee-a56e-7688626327bb" >
+				<set-payload value="#[payload]" doc:name="Set Payload" doc:id="158fcc6f-3479-42fa-a4f7-f2a39f4772ea" />
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

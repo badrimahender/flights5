@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="7137f1b5-b7fa-4b5d-9c2b-897c0a718356" >
+		<http:listener-connection host="0.0.0.0" port="7788" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="021cdf88-1cdc-42eb-ba46-0d61be31bc42" >
+		<db:my-sql-connection host="mudb.mulesoft-training.com" port="3306" user="mule" password="mule" database="training" />
+	</db:config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="f4e2f101-b5ff-452c-94f4-d31df534eecd" >
+		<wsc:connection wsdlLocation="http://ilt.learn.mulesoft.com/delta?wsdl" service="TicketServiceService" port="TicketServicePort" address="http://ilt.learn.mulesoft.com/delta"/>
+	</wsc:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="04f3526f-0dcd-4e29-8334-01956d5bfd3a" basePath="/essentials/united/flights" >
+		<http:request-connection host="ilt.learn.mulesoft.com" port="80" />
+	</http:request-config>
+	<flow name="flights-american" doc:id="596d514d-bd2b-4c95-a8ee-9cafde853b30" >
+		<http:listener doc:name="Listener" doc:id="b031119f-1615-41f4-b980-38d1578145f8" config-ref="HTTP_Listener_config" path="/american" allowedMethods="GET"/>
+		<set-variable value="#[attributes.queryParams.dest]" doc:name="Set Variable" doc:id="22cb8c7a-051a-49cf-bd51-3cc1c33e8d0e" variableName="dest"/>
+		<db:select doc:id="e731a25e-208b-4979-ae3a-984071301735" config-ref="Database_Config">
+			<db:sql >select * from american where toAirport= :destination	</db:sql>
+			<db:input-parameters ><![CDATA[#[{'destination': vars.dest}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="a9157cf0-a270-4c3d-bd8f-81300a5ded2d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	code: (payload01.code1 default "") ++ (payload01.code2 default ""),
+	planeType: payload01.planeType default "",
+	totalSeats: payload01.totalSeats default 0,
+	destination: payload01.toAirport default "",
+	departureDate: payload01.takeOffDate as String default "",
+	origin: payload01.fromAirport default "",
+	price: payload01.price default 0,
+	airlineName: payload01.airlineName default "",
+	seatsAvailable: payload01.seatsAvailable default 0,
+	ID: payload01.ID
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="bfb97a11-82b2-457a-9434-06e70e06afd5"/>
+	</flow>
+	<flow name="flights-united" doc:id="645b2bb1-5329-4356-8cda-b72c1e9c94d8" >
+		<http:listener doc:name="Listener" doc:id="67f00513-cfa6-4418-a198-50e2f7f7656b" config-ref="HTTP_Listener_config" path="/united"/>
+		<set-variable value="#[attributes.queryParams.dest]" doc:name="Set Variable" doc:id="aa04f7bf-3573-4aa7-a975-f9764240f914" variableName="dest"/>
+		<http:request method="GET" doc:name="Request" doc:id="a8faa4c1-dab8-4245-9d7e-2a78b63e3dcf" config-ref="HTTP_Request_configuration" path="/{destination}">
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"destination" : vars.dest
+}]]]></http:uri-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="a0c255bc-c035-48c9-a4ca-9b6e9f4f24f5" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.flights map ( flight , indexOfFlight ) -> {
+	code: flight.code,
+	planeType: flight.planeType,
+	destination: flight.destination,
+	departureDate: flight.departureDate,
+	origin: flight.origin,
+	price: flight.price,
+	airlineName: flight.airlineName,
+	seatsAvailable: flight.emptySeats
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="52fd1f5a-b8ea-4e51-b115-dbd349667f93" />
+	</flow>
+	<flow name="flights-delta" doc:id="c875675e-bbb7-4067-bc8f-a532ef909e77" >
+		<http:listener doc:name="Listener" doc:id="e1422bcd-53ab-4a85-8fd7-573b4aad7623" config-ref="HTTP_Listener_config" path="/delta"/>
+		<set-variable value="#[attributes.queryParams.dest]" doc:name="Set Variable" doc:id="d721717d-0573-4508-89df-5a1ca95b5e52" variableName="dest"/>
+		<ee:transform doc:name="Transform Message" doc:id="82d45b75-243d-4973-bab3-70b444d0331a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://soap.training.mulesoft.com/
+---
+{
+	ns0#findFlight: {
+		destination: vars.dest as String
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:id="58cc5675-d005-4420-8a35-8874b36d212a" config-ref="Web_Service_Consumer_Config" operation="findFlight"/>
+		<ee:transform doc:name="Transform Message" doc:id="3c0f03df-a394-4d53-853c-68909f716a36" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://soap.training.mulesoft.com/
+---
+payload.body.ns0#findFlightResponse.*return map ( return , indexOfReturn ) -> {
+	code: return.code default "",
+	planeType: return.planeType default "",
+	destination: return.destination default "",
+	departureDate: return.departureDate default "",
+	origin: return.origin default "",
+	price: return.price default 0,
+	airlineName: return.airlineName default "",
+	seatsAvailable: return.emptySeats default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2b375440-14da-4ece-a19e-582daa11d05e" message="#[payload]"/>
+	</flow>
+</mule>

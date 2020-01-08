@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="implementationFlow" doc:id="b2356a95-59d8-41b2-894f-6b47d3743cc7" >
+		<http:listener doc:name="Listener" doc:id="d2c329f5-cd6c-49f0-bd7d-2b355c2bf0ad" config-ref="HTTP_Listener_config" path="/flights" allowedMethods="GET"/>
+		<set-variable value="#[attributes.queryParams.airline]" doc:name="Set Variable" doc:id="e5b54f92-c9da-4509-8fec-d160a7babd29" variableName="airline"/>
+		<set-variable value="#[attributes.queryParams.dest]" doc:name="Set Variable" doc:id="1c482bbd-adac-401a-a0c4-de0a146a13c0" variableName="dest"/>
+		<validation:is-true doc:name="Is true" doc:id="4efe9194-d8d9-4892-8f14-d9503583d53e" expression='#["[SFO,LAX,CLE,PDX,PDF]" contains  vars.dest ]' message='#["Invalid destination " ++ vars.dest]'/>
+		<choice doc:name="Choice" doc:id="78cc033f-f16b-4cca-a760-a5fa3ceb03e5" >
+			<when expression="#[vars.airline=='american']">
+				<flow-ref doc:name="Flow Reference" doc:id="60bd8b6e-d737-4a2c-a01a-a7d87fb7c420" name="flights-american"/>
+			</when>
+			<when expression="#[vars.airline=='united']">
+				<flow-ref doc:name="Flow Reference" doc:id="7f9ffd70-5889-4083-af5a-4ab44174fa11" name="flights-delta"/>
+			</when>
+			<when expression="#[vars.airline=='delta']">
+				<flow-ref doc:name="Flow Reference" doc:id="309a68fc-8ab6-49a4-b19e-774ff98b51c0" name="flights-united"/>
+			</when>
+			<otherwise >
+				<flow-ref doc:name="Flow Reference" doc:id="01cd0d75-4ff4-4f29-a4f5-16208084cee0" name="implementationFlow1"/>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="e80994fd-0361-429e-997c-bff9d8856069" />
+	</flow>
+	<flow name="implementationFlow1" doc:id="d3df3439-b956-4aa1-8ecf-8eac143209f9" >
+		<scatter-gather doc:name="Scatter-Gather" doc:id="7330a0ac-610c-4bc5-a800-da91df434f18" >
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="82de96a5-7265-4e5c-ab0d-5a400654309b" name="flights-american"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="ec5fa6d7-82b9-4427-9d99-5f988dc482a1" name="flights-delta"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="0ec4aa1b-4d66-4b0c-9c9a-1ec04dbfb709" name="flights-united"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="3fb4f164-ffba-4f50-9ea0-4b59b36ca837" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="e42b4cfc-d144-42d4-8a1b-d18ac7628d38" message="#[payload]"/>
+	</flow>
+</mule>

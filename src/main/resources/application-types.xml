@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="american" format="json">
+      <types:shape format="weave" example="examples/text.json.txt"><![CDATA[%dw 2.0
+type american = Array<{|
+  code: String, 
+  planeType: String, 
+  totalSeats: Number {"typeId": "int"}, 
+  destination: String, 
+  departureDate: String, 
+  origin: String, 
+  price: Number {"typeId": "int"}, 
+  airlineName: String, 
+  seatsAvailable: Number {"typeId": "int"}, 
+  ID: Number {"typeId": "int"}
+|}> {"MetadataFormat": "json",
+"example": "[{\"code\":\"rree0001\",\"planeType\":\"Boeing 787\",\"totalSeats\":200,\"destination\":\"LAX\",\"departureDate\":\"2016-01-20T00:00:00\",\"origin\":\"MUA\",\"price\":541,\"airlineName\":\"American Airlines\",\"seatsAvailable\":0,\"ID\":1}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="united" format="json">
+      <types:shape format="weave" example="examples/united.json.txt"><![CDATA[%dw 2.0
+type united = {|
+  flights: Array<{|
+    code: String, 
+    price: Number {"typeId": "int"}, 
+    origin: String, 
+    destination: String, 
+    departureDate: String, 
+    planeType: String, 
+    airlineName: String, 
+    emptySeats: Number {"typeId": "int"}
+  |}>
+|} {"MetadataFormat": "json",
+"example": "{\"flights\":[{\"code\":\"ER38sd\",\"price\":400,\"origin\":\"MUA\",\"destination\":\"SFO\",\"departureDate\":\"2015\/03\/20\",\"planeType\":\"Boeing 737\",\"airlineName\":\"United\",\"emptySeats\":0},{\"code\":\"ER45if\",\"price\":345.99,\"origin\":\"MUA\",\"destination\":\"LAX\",\"departureDate\":\"2015\/02\/11\",\"planeType\":\"Boeing 737\",\"airlineName\":\"United\",\"emptySeats\":52},{\"code\":\"ER45jd\",\"price\":346,\"origin\":\"MUA\",\"destination\":\"LAX\",\"departureDate\":\"2015\/04\/11\",\"planeType\":\"Boeing 777\",\"airlineName\":\"United\",\"emptySeats\":12},{\"code\":\"ER0945\",\"price\":423,\"origin\":\"MUA\",\"destination\":\"LAX\",\"departureDate\":\"2015\/06\/11\",\"planeType\":\"Boeing 707\",\"airlineName\":\"United\",\"emptySeats\":0},{\"code\":\"ER9fje\",\"price\":845,\"origin\":\"MUA\",\"destination\":\"CLE\",\"departureDate\":\"2015\/07\/11\",\"planeType\":\"Boeing 727\",\"airlineName\":\"United\",\"emptySeats\":32},{\"code\":\"ER3kfd\",\"price\":245,\"origin\":\"MUA\",\"destination\":\"CLE\",\"departureDate\":\"2015\/08\/11\",\"planeType\":\"Boeing 747\",\"airlineName\":\"United\",\"emptySeats\":13},{\"code\":\"ER39rk\",\"price\":945,\"origin\":\"MUA\",\"destination\":\"SFO\",\"departureDate\":\"2015\/09\/11\",\"planeType\":\"Boeing 757\",\"airlineName\":\"United\",\"emptySeats\":54},{\"code\":\"ER39rj\",\"price\":954,\"origin\":\"MUA\",\"destination\":\"SFO\",\"departureDate\":\"2015\/02\/12\",\"planeType\":\"Boeing 777\",\"airlineName\":\"United\",\"emptySeats\":23},{\"code\":\"ER95jf\",\"price\":234,\"origin\":\"MUA\",\"destination\":\"PDF\",\"departureDate\":\"2015\/02\/12\",\"planeType\":\"Boeing 787\",\"airlineName\":\"United\",\"emptySeats\":23},{\"code\":\"ER49fd\",\"price\":853,\"origin\":\"MUA\",\"destination\":\"PDX\",\"departureDate\":\"2015\/02\/13\",\"planeType\":\"Boeing 777\",\"airlineName\":\"United\",\"emptySeats\":0},{\"code\":\"ER95jf\",\"price\":483,\"origin\":\"MUA\",\"destination\":\"PDX\",\"departureDate\":\"2015\/02\/20\",\"planeType\":\"Boeing 777\",\"airlineName\":\"United\",\"emptySeats\":95},{\"code\":\"ER04kf\",\"price\":532,\"origin\":\"MUA\",\"destination\":\"PDX\",\"departureDate\":\"2015\/02\/12\",\"planeType\":\"Boeing 777\",\"airlineName\":\"United\",\"emptySeats\":30}]}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#a9157cf0-a270-4c3d-bd8f-81300a5ded2d">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="american"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#a0c255bc-c035-48c9-a4ca-9b6e9f4f24f5">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="united"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="american"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#3c0f03df-a394-4d53-853c-68909f716a36">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="american"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
